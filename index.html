@@ -109,6 +109,45 @@
     <div id="stats-view" hidden></div>
   </main>
 
+  <!-- 習慣編集モーダル -->
+  <div id="edit-modal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-hd">
+        <h2 id="modal-title">習慣を編集</h2>
+        <button class="modal-close" id="modal-close" aria-label="閉じる">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M1 1l14 14M15 1L1 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="edit-name" class="field-label">名前</label>
+          <input type="text" id="edit-name" class="field-input" maxlength="50" autocomplete="off">
+        </div>
+        <div class="field">
+          <span class="field-label">カラー</span>
+          <div class="color-swatches" id="color-swatches" role="group" aria-label="カラー選択"></div>
+        </div>
+        <div class="field">
+          <span class="field-label">週の目標日数</span>
+          <div class="goal-stepper">
+            <button type="button" class="step-btn" id="goal-dec" aria-label="減らす">−</button>
+            <span class="goal-val">
+              <strong id="goal-display">7</strong>
+              <span class="goal-unit">日/週</span>
+            </span>
+            <button type="button" class="step-btn" id="goal-inc" aria-label="増やす">＋</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button type="button" class="btn-cancel" id="modal-cancel">キャンセル</button>
+        <button type="button" class="btn-save" id="modal-save">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- iOS ホーム画面追加バナー -->
   <div id="ios-banner" class="ios-banner" hidden aria-live="polite">
     <button class="ios-banner-close" id="ios-banner-close" aria-label="閉じる">

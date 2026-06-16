@@ -2,7 +2,27 @@
 
 const DAYS_JA = ['月', '火', '水', '木', '金', '土', '日'];
 const STORAGE_KEY = 'weekly-tracker-v1';
-const BANNER_KEY = 'ios-banner-dismissed';
+const BANNER_KEY  = 'ios-banner-dismissed';
+
+const COLORS = {
+  indigo: { main: '#6366f1', light: '#e0e7ff' },
+  blue:   { main: '#3b82f6', light: '#dbeafe' },
+  cyan:   { main: '#06b6d4', light: '#cffafe' },
+  green:  { main: '#22c55e', light: '#dcfce7' },
+  orange: { main: '#f97316', light: '#ffedd5' },
+  pink:   { main: '#ec4899', light: '#fce7f3' },
+  purple: { main: '#a855f7', light: '#f3e8ff' },
+  red:    { main: '#ef4444', light: '#fee2e2' },
+};
+const DEFAULT_COLOR = 'indigo';
+
+function habitColor(habit) {
+  return COLORS[habit.color] ?? COLORS[DEFAULT_COLOR];
+}
+
+function habitGoal(habit) {
+  return habit.weeklyGoal ?? 7;
+}
 
 let state = { habits: [], completions: {} };
 let weekOffset = 0;
@@ -12,7 +32,7 @@ let weekOffset = 0;
 function getMonday(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0 = Sun
+  const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d;
@@ -70,7 +90,7 @@ function load() {
 // ── State mutations ────────────────────────────────────────────────────────
 
 function addHabit(name) {
-  state.habits.push({ id: uid(), name });
+  state.habits.push({ id: uid(), name, color: DEFAULT_COLOR, weeklyGoal: 7 });
   save();
 }
 
@@ -95,22 +115,19 @@ function render() {
   const dates = getWeekDates(weekOffset);
   const todayStr = toDateStr(new Date());
 
-  // Week label
   const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
   document.getElementById('week-label').textContent =
     `${dates[0].getFullYear()}年 ${fmt(dates[0])} – ${fmt(dates[6])}`;
-
   document.getElementById('today-btn').disabled = weekOffset === 0;
 
-  // Table header — rebuild day columns
+  // Rebuild thead day columns
   const theadRow = document.getElementById('thead-row');
   while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
 
   dates.forEach((d, i) => {
     const th = document.createElement('th');
     th.className = 'day-col' + (toDateStr(d) === todayStr ? ' today' : '');
-    const isSat = i === 5;
-    const isSun = i === 6;
+    const isSat = i === 5, isSun = i === 6;
     th.innerHTML =
       `<span class="dn${isSat ? ' sat' : isSun ? ' sun' : ''}">${DAYS_JA[i]}</span>` +
       `<span class="dd">${d.getMonth() + 1}/${d.getDate()}</span>`;
@@ -122,7 +139,7 @@ function render() {
   progTh.textContent = '達成';
   theadRow.appendChild(progTh);
 
-  // Table body
+  // Body
   const tbody = document.getElementById('tracker-body');
   tbody.innerHTML = '';
 
@@ -139,13 +156,33 @@ function render() {
   emptyState.hidden = true;
 
   for (const habit of state.habits) {
-    const tr = document.createElement('tr');
+    const { main: hcMain, light: hcLight } = habitColor(habit);
+    const goal = habitGoal(habit);
 
-    // Habit name + delete
+    const tr = document.createElement('tr');
+    tr.dataset.habit = habit.id;
+    tr.style.setProperty('--hc', hcMain);
+    tr.style.setProperty('--hc-light', hcLight);
+
+    // Habit cell: drag handle + color dot + name + edit btn + delete btn
     const habitTd = document.createElement('td');
     habitTd.className = 'habit-cell';
     habitTd.innerHTML =
+      `<button class="drag-handle" aria-label="ドラッグして並び替え">` +
+        `<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">` +
+          `<circle cx="3" cy="2.5" r="1.5"/><circle cx="7" cy="2.5" r="1.5"/>` +
+          `<circle cx="3" cy="8"   r="1.5"/><circle cx="7" cy="8"   r="1.5"/>` +
+          `<circle cx="3" cy="13.5" r="1.5"/><circle cx="7" cy="13.5" r="1.5"/>` +
+        `</svg>` +
+      `</button>` +
+      `<span class="color-dot" style="background:${hcMain}"></span>` +
       `<span class="habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>` +
+      `<button class="edit-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を編集">` +
+        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+          `<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>` +
+          `<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>` +
+        `</svg>` +
+      `</button>` +
       `<button class="del-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を削除">` +
         `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">` +
           `<path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>` +
@@ -176,12 +213,12 @@ function render() {
     }
 
     // Progress
+    const pct = Math.min(Math.round((done / goal) * 100), 100);
     const progTd = document.createElement('td');
     progTd.className = 'prog-cell';
     progTd.dataset.habit = habit.id;
-    const pct = Math.round((done / 7) * 100);
     progTd.innerHTML =
-      `<span class="prog-count">${done}<span class="prog-total">/7</span></span>` +
+      `<span class="prog-count">${done}<span class="prog-total">/${goal}</span></span>` +
       `<div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>`;
     tr.appendChild(progTd);
 
@@ -201,14 +238,17 @@ function updateProgress(habitId) {
   for (const d of dates) {
     if (state.completions[`${habitId}_${toDateStr(d)}`]) done++;
   }
+  const habit = state.habits.find(h => h.id === habitId);
+  const goal = habitGoal(habit);
+  const pct = Math.min(Math.round((done / goal) * 100), 100);
   const cell = document.querySelector(`.prog-cell[data-habit="${habitId}"]`);
   if (!cell) return;
-  // prog-count's first child is the text node containing the count
   cell.querySelector('.prog-count').firstChild.textContent = done;
-  cell.querySelector('.prog-fill').style.width = `${Math.round((done / 7) * 100)}%`;
+  cell.querySelector('.prog-total').textContent = `/${goal}`;
+  cell.querySelector('.prog-fill').style.width = `${pct}%`;
 }
 
-// ── Event listeners ────────────────────────────────────────────────────────
+// ── Event listeners (tracker) ──────────────────────────────────────────────
 
 document.getElementById('add-form').addEventListener('submit', e => {
   e.preventDefault();
@@ -221,7 +261,6 @@ document.getElementById('add-form').addEventListener('submit', e => {
   render();
 });
 
-// Delegate clicks inside tbody for both check and delete
 document.getElementById('tracker-body').addEventListener('click', e => {
   const checkBtn = e.target.closest('.check-btn');
   if (checkBtn) {
@@ -235,6 +274,12 @@ document.getElementById('tracker-body').addEventListener('click', e => {
     return;
   }
 
+  const editBtn = e.target.closest('.edit-btn');
+  if (editBtn) {
+    openEditModal(editBtn.dataset.id);
+    return;
+  }
+
   const delBtn = e.target.closest('.del-btn');
   if (delBtn) {
     if (confirm('この習慣を削除しますか？')) {
@@ -244,19 +289,134 @@ document.getElementById('tracker-body').addEventListener('click', e => {
   }
 });
 
-document.getElementById('prev-week').addEventListener('click', () => {
-  weekOffset--;
-  render();
+document.getElementById('prev-week').addEventListener('click', () => { weekOffset--; render(); });
+document.getElementById('next-week').addEventListener('click', () => { weekOffset++; render(); });
+document.getElementById('today-btn').addEventListener('click', () => { weekOffset = 0; render(); });
+
+// ── Drag-and-drop (PointerEvents — works on both desktop and iOS) ──────────
+
+let drag = null;
+
+document.getElementById('tracker-body').addEventListener('pointerdown', e => {
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return;
+  const tr = handle.closest('tr');
+  if (!tr) return;
+  e.preventDefault();
+  handle.setPointerCapture(e.pointerId);
+  tr.classList.add('is-dragging');
+  drag = { tr };
 });
 
-document.getElementById('next-week').addEventListener('click', () => {
-  weekOffset++;
-  render();
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const tbody = document.getElementById('tracker-body');
+  const others = [...tbody.querySelectorAll('tr:not(.is-dragging)')];
+  const after = others.find(r => e.clientY < r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2);
+  if (after) tbody.insertBefore(drag.tr, after);
+  else tbody.appendChild(drag.tr);
 });
 
-document.getElementById('today-btn').addEventListener('click', () => {
-  weekOffset = 0;
-  render();
+function endDrag() {
+  if (!drag) return;
+  drag.tr.classList.remove('is-dragging');
+  const tbody = document.getElementById('tracker-body');
+  const newOrder = [...tbody.querySelectorAll('tr')].map(r => r.dataset.habit);
+  state.habits = newOrder.map(id => state.habits.find(h => h.id === id)).filter(Boolean);
+  save();
+  drag = null;
+}
+
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+
+// ── Edit modal ─────────────────────────────────────────────────────────────
+
+let editState = { habitId: null, goal: 7, color: DEFAULT_COLOR };
+
+function openEditModal(habitId) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  editState = { habitId, goal: habitGoal(habit), color: habit.color || DEFAULT_COLOR };
+  document.getElementById('edit-name').value = habit.name;
+  document.getElementById('goal-display').textContent = editState.goal;
+  updateStepBtns();
+  renderColorSwatches();
+  document.getElementById('edit-modal').hidden = false;
+  requestAnimationFrame(() => document.getElementById('edit-name').focus());
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').hidden = true;
+  editState.habitId = null;
+}
+
+function saveEdit() {
+  if (!editState.habitId) return;
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { document.getElementById('edit-name').focus(); return; }
+  const habit = state.habits.find(h => h.id === editState.habitId);
+  if (habit) {
+    habit.name = name;
+    habit.color = editState.color;
+    habit.weeklyGoal = editState.goal;
+    save();
+    render();
+    if (currentView === 'stats') renderStats();
+  }
+  closeEditModal();
+}
+
+function renderColorSwatches() {
+  const container = document.getElementById('color-swatches');
+  container.innerHTML = '';
+  for (const [id, { main }] of Object.entries(COLORS)) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'color-swatch' + (id === editState.color ? ' selected' : '');
+    btn.style.background = main;
+    btn.style.color = main; // used for outline currentColor when selected
+    btn.dataset.color = id;
+    btn.setAttribute('aria-label', id);
+    btn.setAttribute('aria-pressed', String(id === editState.color));
+    btn.addEventListener('click', () => {
+      editState.color = id;
+      container.querySelectorAll('.color-swatch').forEach(b => {
+        const sel = b.dataset.color === editState.color;
+        b.classList.toggle('selected', sel);
+        b.setAttribute('aria-pressed', String(sel));
+      });
+    });
+    container.appendChild(btn);
+  }
+}
+
+function updateStepBtns() {
+  document.getElementById('goal-dec').disabled = editState.goal <= 1;
+  document.getElementById('goal-inc').disabled = editState.goal >= 7;
+}
+
+document.getElementById('goal-dec').addEventListener('click', () => {
+  if (editState.goal > 1) { editState.goal--; document.getElementById('goal-display').textContent = editState.goal; }
+  updateStepBtns();
+});
+
+document.getElementById('goal-inc').addEventListener('click', () => {
+  if (editState.goal < 7) { editState.goal++; document.getElementById('goal-display').textContent = editState.goal; }
+  updateStepBtns();
+});
+
+document.getElementById('modal-save').addEventListener('click', saveEdit);
+document.getElementById('modal-cancel').addEventListener('click', closeEditModal);
+document.getElementById('modal-close').addEventListener('click', closeEditModal);
+
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target.id === 'edit-modal') closeEditModal();
+});
+
+document.getElementById('edit-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+  if (e.key === 'Escape') closeEditModal();
 });
 
 // ── View switching ────────────────────────────────────────────────────────
@@ -284,35 +444,27 @@ document.getElementById('tab-stats').addEventListener('click', () => switchView(
 function getStreak(habitId) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   let current = 0;
   const d = new Date(today);
   while (state.completions[`${habitId}_${toDateStr(d)}`]) {
     current++;
     d.setDate(d.getDate() - 1);
   }
-
   const dates = Object.keys(state.completions)
     .filter(k => k.startsWith(habitId + '_'))
     .map(k => k.slice(habitId.length + 1))
     .sort();
-
   let best = current;
   if (dates.length > 0) {
     let run = 1;
     for (let i = 1; i < dates.length; i++) {
       const prev = new Date(dates[i - 1]);
       prev.setDate(prev.getDate() + 1);
-      if (toDateStr(prev) === dates[i]) {
-        run++;
-      } else {
-        best = Math.max(best, run);
-        run = 1;
-      }
+      if (toDateStr(prev) === dates[i]) run++;
+      else { best = Math.max(best, run); run = 1; }
     }
     best = Math.max(best, run);
   }
-
   return { current, best };
 }
 
@@ -322,45 +474,46 @@ function renderStats() {
 
   if (state.habits.length === 0) {
     view.innerHTML =
-      `<div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
-        <p>統計を表示するには習慣を追加してください</p>
-      </div>`;
+      `<div class="empty-state">` +
+        `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">` +
+          `<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>` +
+        `</svg>` +
+        `<p>統計を表示するには習慣を追加してください</p>` +
+      `</div>`;
     return;
   }
 
   const weekDates = getWeekDates(0);
   let weeklyDone = 0;
+  let weeklyGoalSum = 0;
   const habitWeekCounts = state.habits.map(h => {
+    const goal = habitGoal(h);
     let done = 0;
     for (const d of weekDates) if (state.completions[`${h.id}_${toDateStr(d)}`]) done++;
     weeklyDone += done;
-    return done;
+    weeklyGoalSum += goal;
+    return { done, goal };
   });
-  const weekPct = Math.round((weeklyDone / (state.habits.length * 7)) * 100);
-  const habitsActive = habitWeekCounts.filter(n => n > 0).length;
 
-  // Summary
+  const weekPct = weeklyGoalSum > 0 ? Math.min(Math.round((weeklyDone / weeklyGoalSum) * 100), 100) : 0;
+  const habitsAchieved = habitWeekCounts.filter(({ done, goal }) => done >= goal).length;
+
   const summary = document.createElement('div');
   summary.className = 'stats-summary';
   summary.innerHTML =
-    `<div class="stat-sum-item">
-      <div class="stat-sum-num">${habitsActive}<span class="stat-sum-den">/${state.habits.length}</span></div>
-      <div class="stat-sum-label">今週達成中の習慣</div>
-    </div>
-    <div class="stat-sum-divider"></div>
-    <div class="stat-sum-item">
-      <div class="stat-sum-num">${weekPct}<span class="stat-sum-den">%</span></div>
-      <div class="stat-sum-label">今週の全体達成率</div>
-    </div>`;
+    `<div class="stat-sum-item">` +
+      `<div class="stat-sum-num">${habitsAchieved}<span class="stat-sum-den">/${state.habits.length}</span></div>` +
+      `<div class="stat-sum-label">今週目標達成の習慣</div>` +
+    `</div>` +
+    `<div class="stat-sum-divider"></div>` +
+    `<div class="stat-sum-item">` +
+      `<div class="stat-sum-num">${weekPct}<span class="stat-sum-den">%</span></div>` +
+      `<div class="stat-sum-label">今週の全体達成率</div>` +
+    `</div>`;
   view.appendChild(summary);
 
-  // Per-habit cards
-  const NUM_WEEKS = 8;
   for (const habit of state.habits) {
-    view.appendChild(createStatCard(habit, NUM_WEEKS));
+    view.appendChild(createStatCard(habit, 8));
   }
 }
 
@@ -368,35 +521,37 @@ function createStatCard(habit, numWeeks) {
   const { current: streakCur, best: streakBest } = getStreak(habit.id);
   const totalDays = Object.keys(state.completions)
     .filter(k => k.startsWith(habit.id + '_')).length;
+  const goal = habitGoal(habit);
+  const { main: hcMain } = habitColor(habit);
 
   const barsHTML = Array.from({ length: numWeeks }, (_, i) => {
     const offset = -(numWeeks - 1 - i);
     const dates = getWeekDates(offset);
     let count = 0;
     for (const d of dates) if (state.completions[`${habit.id}_${toDateStr(d)}`]) count++;
-    const pct = Math.round((count / 7) * 100);
+    const pct = Math.min(Math.round((count / goal) * 100), 100);
     const isThisWeek = offset === 0;
     const label = isThisWeek
       ? '今'
       : `${dates[0].getMonth() + 1}/${dates[0].getDate()}`;
-    return `<div class="chart-col${isThisWeek ? ' this-week' : ''}">
-      <div class="chart-track">
-        <div class="chart-fill" style="height:${pct}%"></div>
-      </div>
-      <span class="chart-label">${label}</span>
-    </div>`;
+    return `<div class="chart-col${isThisWeek ? ' this-week' : ''}">` +
+      `<div class="chart-track"><div class="chart-fill" style="height:${pct}%"></div></div>` +
+      `<span class="chart-label">${label}</span>` +
+    `</div>`;
   }).join('');
 
   const card = document.createElement('div');
   card.className = 'stat-card';
+  card.style.setProperty('--hc', hcMain);
   card.innerHTML =
-    `<span class="stat-habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>
-    <div class="stat-chips">
-      <span class="chip">合計 <strong>${totalDays}</strong>日</span>
-      <span class="chip chip-streak">🔥 <strong>${streakCur}</strong>日</span>
-      <span class="chip">最長 <strong>${streakBest}</strong>日</span>
-    </div>
-    <div class="chart-bars">${barsHTML}</div>`;
+    `<span class="stat-habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>` +
+    `<div class="stat-chips">` +
+      `<span class="chip">合計 <strong>${totalDays}</strong>日</span>` +
+      `<span class="chip chip-streak">🔥 <strong>${streakCur}</strong>日</span>` +
+      `<span class="chip">最長 <strong>${streakBest}</strong>日</span>` +
+      (goal < 7 ? `<span class="chip">目標 <strong>${goal}</strong>日/週</span>` : '') +
+    `</div>` +
+    `<div class="chart-bars">${barsHTML}</div>`;
   return card;
 }
 
@@ -423,9 +578,7 @@ document.getElementById('import-input').addEventListener('change', e => {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      if (!Array.isArray(data.habits) || typeof data.completions !== 'object') {
-        throw new Error('invalid');
-      }
+      if (!Array.isArray(data.habits) || typeof data.completions !== 'object') throw new Error();
       if (confirm(`${data.habits.length} 件の習慣データをインポートしますか？\n（現在のデータは上書きされます）`)) {
         state = { habits: data.habits, completions: data.completions };
         save();
@@ -446,12 +599,8 @@ function initIOSBanner() {
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
   const isStandalone = window.navigator.standalone === true;
-  const dismissed = localStorage.getItem(BANNER_KEY);
-
-  if (isIOS && isSafari && !isStandalone && !dismissed) {
-    setTimeout(() => {
-      document.getElementById('ios-banner').hidden = false;
-    }, 1500);
+  if (isIOS && isSafari && !isStandalone && !localStorage.getItem(BANNER_KEY)) {
+    setTimeout(() => { document.getElementById('ios-banner').hidden = false; }, 1500);
   }
 }
 
