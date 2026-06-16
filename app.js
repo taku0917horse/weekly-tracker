@@ -259,6 +259,147 @@ document.getElementById('today-btn').addEventListener('click', () => {
   render();
 });
 
+// ── View switching ────────────────────────────────────────────────────────
+
+let currentView = 'tracker';
+
+function switchView(view) {
+  currentView = view;
+  const isTracker = view === 'tracker';
+  document.getElementById('tracker-view').hidden = !isTracker;
+  document.getElementById('stats-view').hidden = isTracker;
+  document.getElementById('week-nav').hidden = !isTracker;
+  document.getElementById('tab-tracker').classList.toggle('is-active', isTracker);
+  document.getElementById('tab-stats').classList.toggle('is-active', !isTracker);
+  document.getElementById('tab-tracker').setAttribute('aria-selected', String(isTracker));
+  document.getElementById('tab-stats').setAttribute('aria-selected', String(!isTracker));
+  if (!isTracker) renderStats();
+}
+
+document.getElementById('tab-tracker').addEventListener('click', () => switchView('tracker'));
+document.getElementById('tab-stats').addEventListener('click', () => switchView('stats'));
+
+// ── Stats rendering ───────────────────────────────────────────────────────
+
+function getStreak(habitId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let current = 0;
+  const d = new Date(today);
+  while (state.completions[`${habitId}_${toDateStr(d)}`]) {
+    current++;
+    d.setDate(d.getDate() - 1);
+  }
+
+  const dates = Object.keys(state.completions)
+    .filter(k => k.startsWith(habitId + '_'))
+    .map(k => k.slice(habitId.length + 1))
+    .sort();
+
+  let best = current;
+  if (dates.length > 0) {
+    let run = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const prev = new Date(dates[i - 1]);
+      prev.setDate(prev.getDate() + 1);
+      if (toDateStr(prev) === dates[i]) {
+        run++;
+      } else {
+        best = Math.max(best, run);
+        run = 1;
+      }
+    }
+    best = Math.max(best, run);
+  }
+
+  return { current, best };
+}
+
+function renderStats() {
+  const view = document.getElementById('stats-view');
+  view.innerHTML = '';
+
+  if (state.habits.length === 0) {
+    view.innerHTML =
+      `<div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <p>統計を表示するには習慣を追加してください</p>
+      </div>`;
+    return;
+  }
+
+  const weekDates = getWeekDates(0);
+  let weeklyDone = 0;
+  const habitWeekCounts = state.habits.map(h => {
+    let done = 0;
+    for (const d of weekDates) if (state.completions[`${h.id}_${toDateStr(d)}`]) done++;
+    weeklyDone += done;
+    return done;
+  });
+  const weekPct = Math.round((weeklyDone / (state.habits.length * 7)) * 100);
+  const habitsActive = habitWeekCounts.filter(n => n > 0).length;
+
+  // Summary
+  const summary = document.createElement('div');
+  summary.className = 'stats-summary';
+  summary.innerHTML =
+    `<div class="stat-sum-item">
+      <div class="stat-sum-num">${habitsActive}<span class="stat-sum-den">/${state.habits.length}</span></div>
+      <div class="stat-sum-label">今週達成中の習慣</div>
+    </div>
+    <div class="stat-sum-divider"></div>
+    <div class="stat-sum-item">
+      <div class="stat-sum-num">${weekPct}<span class="stat-sum-den">%</span></div>
+      <div class="stat-sum-label">今週の全体達成率</div>
+    </div>`;
+  view.appendChild(summary);
+
+  // Per-habit cards
+  const NUM_WEEKS = 8;
+  for (const habit of state.habits) {
+    view.appendChild(createStatCard(habit, NUM_WEEKS));
+  }
+}
+
+function createStatCard(habit, numWeeks) {
+  const { current: streakCur, best: streakBest } = getStreak(habit.id);
+  const totalDays = Object.keys(state.completions)
+    .filter(k => k.startsWith(habit.id + '_')).length;
+
+  const barsHTML = Array.from({ length: numWeeks }, (_, i) => {
+    const offset = -(numWeeks - 1 - i);
+    const dates = getWeekDates(offset);
+    let count = 0;
+    for (const d of dates) if (state.completions[`${habit.id}_${toDateStr(d)}`]) count++;
+    const pct = Math.round((count / 7) * 100);
+    const isThisWeek = offset === 0;
+    const label = isThisWeek
+      ? '今'
+      : `${dates[0].getMonth() + 1}/${dates[0].getDate()}`;
+    return `<div class="chart-col${isThisWeek ? ' this-week' : ''}">
+      <div class="chart-track">
+        <div class="chart-fill" style="height:${pct}%"></div>
+      </div>
+      <span class="chart-label">${label}</span>
+    </div>`;
+  }).join('');
+
+  const card = document.createElement('div');
+  card.className = 'stat-card';
+  card.innerHTML =
+    `<span class="stat-habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>
+    <div class="stat-chips">
+      <span class="chip">合計 <strong>${totalDays}</strong>日</span>
+      <span class="chip chip-streak">🔥 <strong>${streakCur}</strong>日</span>
+      <span class="chip">最長 <strong>${streakBest}</strong>日</span>
+    </div>
+    <div class="chart-bars">${barsHTML}</div>`;
+  return card;
+}
+
 // ── Export / Import ────────────────────────────────────────────────────────
 
 document.getElementById('export-btn').addEventListener('click', () => {

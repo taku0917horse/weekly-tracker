@@ -2,92 +2,111 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- viewport-fit=cover でノッチ・ダイナミックアイランドまで全画面表示 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="習慣を週ごとにトラッキングするアプリ">
-
-  <!-- PWA / iOS -->
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Weekly">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
-
   <title>Weekly Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <div class="header-inner">
+    <div class="header-top">
       <h1>Weekly Tracker</h1>
-      <nav class="week-nav" aria-label="週の移動">
+      <nav class="week-nav" id="week-nav" aria-label="週の移動">
         <button id="prev-week" aria-label="前の週">&#8249;</button>
         <span id="week-label"></span>
         <button id="next-week" aria-label="次の週">&#8250;</button>
         <button id="today-btn">今週</button>
       </nav>
     </div>
+    <div class="header-tabs" role="tablist">
+      <button class="htab is-active" id="tab-tracker" role="tab" aria-selected="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        トラッカー
+      </button>
+      <button class="htab" id="tab-stats" role="tab" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        統計
+      </button>
+    </div>
   </header>
 
   <main>
-    <div class="tracker-card">
-      <div class="table-wrap">
-        <table id="tracker-table">
-          <thead>
-            <tr id="thead-row">
-              <th class="habit-col">習慣</th>
-            </tr>
-          </thead>
-          <tbody id="tracker-body"></tbody>
-        </table>
-        <div id="empty-state" class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <p>習慣を追加してトラッキングを始めましょう</p>
-          <small>下のフォームから習慣を入力してください</small>
+    <!-- ── トラッカービュー ── -->
+    <div id="tracker-view">
+      <div class="tracker-card">
+        <div class="table-wrap">
+          <table id="tracker-table">
+            <thead>
+              <tr id="thead-row">
+                <th class="habit-col">習慣</th>
+              </tr>
+            </thead>
+            <tbody id="tracker-body"></tbody>
+          </table>
+          <div id="empty-state" class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <p>習慣を追加してトラッキングを始めましょう</p>
+            <small>下のフォームから習慣を入力してください</small>
+          </div>
         </div>
+      </div>
+
+      <div class="add-form-wrap">
+        <form id="add-form">
+          <input
+            type="text"
+            id="habit-input"
+            placeholder="新しい習慣を入力... (例: 読書、運動、瞑想)"
+            maxlength="50"
+            autocomplete="off"
+          >
+          <button type="submit">追加</button>
+        </form>
+      </div>
+
+      <div class="toolbar">
+        <button id="export-btn" class="tool-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          エクスポート
+        </button>
+        <label class="tool-btn" id="import-label" role="button" tabindex="0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 5 17 10"/>
+            <line x1="12" y1="5" x2="12" y2="15"/>
+          </svg>
+          インポート
+          <input type="file" id="import-input" accept=".json">
+        </label>
       </div>
     </div>
 
-    <div class="add-form-wrap">
-      <form id="add-form">
-        <input
-          type="text"
-          id="habit-input"
-          placeholder="新しい習慣を入力... (例: 読書、運動、瞑想)"
-          maxlength="50"
-          autocomplete="off"
-          autofocus
-        >
-        <button type="submit">追加</button>
-      </form>
-    </div>
-
-    <!-- エクスポート / インポート -->
-    <div class="toolbar">
-      <button id="export-btn" class="tool-btn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        エクスポート
-      </button>
-      <label class="tool-btn" id="import-label" role="button" tabindex="0">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="7 10 12 5 17 10"/>
-          <line x1="12" y1="5" x2="12" y2="15"/>
-        </svg>
-        インポート
-        <input type="file" id="import-input" accept=".json">
-      </label>
-    </div>
+    <!-- ── 統計ビュー ── -->
+    <div id="stats-view" hidden></div>
   </main>
 
   <!-- iOS ホーム画面追加バナー -->

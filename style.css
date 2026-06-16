@@ -45,7 +45,7 @@ header {
   box-shadow: var(--shadow);
 }
 
-.header-inner {
+.header-top {
   max-width: 960px;
   margin: 0 auto;
   padding: 0 1.5rem;
@@ -415,7 +415,7 @@ td.prog-cell {
     padding: 1rem;
   }
 
-  .header-inner {
+  .header-top {
     height: 52px;
     padding: 0 1rem;
   }
@@ -442,6 +442,199 @@ td.prog-cell {
   .toolbar {
     gap: 0.5rem;
   }
+}
+
+/* ── Header tabs ── */
+
+.header-tabs {
+  border-top: 1px solid var(--border);
+  display: flex;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 0.75rem;
+}
+
+.htab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.htab.is-active {
+  color: var(--primary-dark);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.htab:hover:not(.is-active) {
+  color: var(--text);
+}
+
+/* ── Stats view ── */
+
+#stats-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stats-summary {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  gap: 1rem;
+}
+
+.stat-sum-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-sum-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  line-height: 1;
+}
+
+.stat-sum-den {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.stat-sum-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+.stat-sum-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.125rem 1.25rem 1rem;
+}
+
+.stat-habit-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.625rem;
+}
+
+.stat-chips {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.875rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.chip strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.chip-streak {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.chip-streak strong {
+  color: #b45309;
+}
+
+/* ── Week bar chart ── */
+
+.chart-bars {
+  display: flex;
+  gap: 4px;
+  height: 72px;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chart-track {
+  flex: 1;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.chart-fill {
+  width: 100%;
+  background: var(--primary);
+  opacity: 0.65;
+  transition: height 0.45s ease;
+}
+
+.chart-col.this-week .chart-track {
+  border-color: var(--primary);
+}
+
+.chart-col.this-week .chart-fill {
+  opacity: 1;
+}
+
+.chart-label {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.chart-col.this-week .chart-label {
+  color: var(--primary-dark);
+  font-weight: 700;
 }
 
 /* ── Safe area (viewport-fit=cover, iPhone notch / Dynamic Island) ── */
