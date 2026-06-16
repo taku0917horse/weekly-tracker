@@ -2,8 +2,18 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- viewport-fit=cover でノッチ・ダイナミックアイランドまで全画面表示 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="習慣を週ごとにトラッキングするアプリ">
+
+  <!-- PWA / iOS -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Weekly">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+
   <title>Weekly Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -57,7 +67,68 @@
         <button type="submit">追加</button>
       </form>
     </div>
+
+    <!-- エクスポート / インポート -->
+    <div class="toolbar">
+      <button id="export-btn" class="tool-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        エクスポート
+      </button>
+      <label class="tool-btn" id="import-label" role="button" tabindex="0">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 5 17 10"/>
+          <line x1="12" y1="5" x2="12" y2="15"/>
+        </svg>
+        インポート
+        <input type="file" id="import-input" accept=".json">
+      </label>
+    </div>
   </main>
+
+  <!-- iOS ホーム画面追加バナー -->
+  <div id="ios-banner" class="ios-banner" hidden aria-live="polite">
+    <button class="ios-banner-close" id="ios-banner-close" aria-label="閉じる">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="ios-banner-body">
+      <svg class="ios-banner-icon" viewBox="0 0 512 512" width="44" height="44" aria-hidden="true">
+        <defs>
+          <linearGradient id="ib" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#3730a3"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="114" fill="url(#ib)"/>
+        <circle cx="143" cy="190" r="44" fill="white" opacity="0.9"/>
+        <circle cx="256" cy="190" r="44" fill="white" opacity="0.9"/>
+        <circle cx="369" cy="190" r="44" fill="white" opacity="0.9"/>
+        <circle cx="143" cy="322" r="44" fill="none" stroke="white" stroke-width="7" opacity="0.4"/>
+        <circle cx="256" cy="322" r="44" fill="white" opacity="0.9"/>
+        <circle cx="369" cy="322" r="44" fill="white" opacity="0.9"/>
+      </svg>
+      <div class="ios-banner-text">
+        <strong>ホーム画面に追加</strong>
+        <p>
+          Safari の
+          <span class="ios-share-icon" aria-label="共有ボタン">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </span>
+          をタップして「ホーム画面に追加」を選択
+        </p>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

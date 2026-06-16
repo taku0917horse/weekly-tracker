@@ -1,0 +1,27 @@
+{
+  "name": "Weekly Tracker",
+  "short_name": "Weekly",
+  "description": "習慣を週ごとにトラッキングするアプリ",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "background_color": "#f0f2f7",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

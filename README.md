@@ -9,6 +9,10 @@
 - 週の移動（前週 / 次週 / 今週）
 - 達成率の表示（プログレスバー）
 - データは `localStorage` に自動保存
+- **PWA 対応** — ホーム画面に追加してアプリとして使用可能
+- **オフライン対応** — Service Worker によるキャッシュ
+- **エクスポート / インポート** — JSON ファイルでデータをバックアップ・移行
+- **iOS セーフエリア対応** — ノッチ・Dynamic Island 領域を考慮したレイアウト
 - フレームワーク不使用（HTML + CSS + JavaScript のみ）
 
 ## 使い方
@@ -40,13 +44,32 @@ xdg-open index.html   # Linux
 3. Source を `main` ブランチの `/ (root)` に設定して Save
 4. `https://<your-username>.github.io/weekly-tracker/` でアクセス可能になります
 
+## iPhoneのホーム画面に追加する方法
+
+1. Safari で本アプリの URL を開く
+2. 下部（または上部）の **共有ボタン（□↑）** をタップ
+3. 「**ホーム画面に追加**」を選択 → 「追加」をタップ
+4. ホーム画面からアプリとして起動可能になります
+
+> 初回訪問から 1.5 秒後に Safari でのみ案内バナーが表示されます。
+
+## エクスポート / インポート
+
+- **エクスポート**: 「エクスポート」ボタンで JSON ファイルをダウンロード
+- **インポート**: 「インポート」ボタンで JSON ファイルを選択して復元
+- 機種変更やブラウザ移行時のデータ移行に使用できます
+
 ## ファイル構成
 
 ```
 weekly-tracker/
-├── index.html   # アプリのエントリーポイント
-├── style.css    # スタイル
-├── app.js       # ロジック（localStorage 管理 / レンダリング）
+├── index.html          # アプリのエントリーポイント
+├── style.css           # スタイル（セーフエリア対応含む）
+├── app.js              # ロジック（localStorage / export / import）
+├── manifest.json       # PWA マニフェスト
+├── sw.js               # Service Worker（オフライン対応）
+├── icon.svg            # アプリアイコン
+├── icon-maskable.svg   # マスカブルアイコン（Android ホーム画面用）
 ├── .gitignore
 └── README.md
 ```

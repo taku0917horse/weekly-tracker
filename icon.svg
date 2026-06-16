@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+  <!-- Subtle header bar suggesting a calendar -->
+  <rect x="77" y="90" width="358" height="20" rx="6" fill="white" opacity="0.18"/>
+  <!-- Row 1 (y=164): Mon–Fri checked, Sat–Sun unchecked -->
+  <circle cx="77"  cy="190" r="28" fill="white" opacity="0.9"/>
+  <circle cx="143" cy="190" r="28" fill="white" opacity="0.9"/>
+  <circle cx="209" cy="190" r="28" fill="white" opacity="0.9"/>
+  <circle cx="275" cy="190" r="28" fill="white" opacity="0.9"/>
+  <circle cx="341" cy="190" r="28" fill="white" opacity="0.9"/>
+  <circle cx="407" cy="190" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="435" cy="190" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <!-- Row 2 (y=275): mixed -->
+  <circle cx="77"  cy="275" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="143" cy="275" r="28" fill="white" opacity="0.9"/>
+  <circle cx="209" cy="275" r="28" fill="white" opacity="0.9"/>
+  <circle cx="275" cy="275" r="28" fill="white" opacity="0.9"/>
+  <circle cx="341" cy="275" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="407" cy="275" r="28" fill="white" opacity="0.9"/>
+  <circle cx="435" cy="275" r="28" fill="white" opacity="0.9"/>
+  <!-- Row 3 (y=360): partially done -->
+  <circle cx="77"  cy="360" r="28" fill="white" opacity="0.9"/>
+  <circle cx="143" cy="360" r="28" fill="white" opacity="0.9"/>
+  <circle cx="209" cy="360" r="28" fill="white" opacity="0.9"/>
+  <circle cx="275" cy="360" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="341" cy="360" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="407" cy="360" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+  <circle cx="435" cy="360" r="28" fill="none" stroke="white" stroke-width="4" opacity="0.4"/>
+</svg>

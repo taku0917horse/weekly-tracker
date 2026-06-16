@@ -2,6 +2,7 @@
 
 const DAYS_JA = ['月', '火', '水', '木', '金', '土', '日'];
 const STORAGE_KEY = 'weekly-tracker-v1';
+const BANNER_KEY = 'ios-banner-dismissed';
 
 let state = { habits: [], completions: {} };
 let weekOffset = 0;
@@ -258,7 +259,77 @@ document.getElementById('today-btn').addEventListener('click', () => {
   render();
 });
 
+// ── Export / Import ────────────────────────────────────────────────────────
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const payload = JSON.stringify(
+    { habits: state.habits, completions: state.completions, exportedAt: new Date().toISOString() },
+    null, 2
+  );
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `weekly-tracker-${toDateStr(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.habits) || typeof data.completions !== 'object') {
+        throw new Error('invalid');
+      }
+      if (confirm(`${data.habits.length} 件の習慣データをインポートしますか？\n（現在のデータは上書きされます）`)) {
+        state = { habits: data.habits, completions: data.completions };
+        save();
+        render();
+      }
+    } catch {
+      alert('インポートに失敗しました。ファイルの形式を確認してください。');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ── iOS install banner ─────────────────────────────────────────────────────
+
+function initIOSBanner() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem(BANNER_KEY);
+
+  if (isIOS && isSafari && !isStandalone && !dismissed) {
+    setTimeout(() => {
+      document.getElementById('ios-banner').hidden = false;
+    }, 1500);
+  }
+}
+
+document.getElementById('ios-banner-close').addEventListener('click', () => {
+  document.getElementById('ios-banner').hidden = true;
+  localStorage.setItem(BANNER_KEY, '1');
+});
+
+// ── Service Worker ─────────────────────────────────────────────────────────
+
+function initServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 
 load();
 render();
+initIOSBanner();
+initServiceWorker();
