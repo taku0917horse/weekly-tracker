@@ -4,7 +4,6 @@
   padding: 0;
 }
 
-/* Prevent author display rules from overriding the HTML hidden attribute */
 [hidden] { display: none !important; }
 
 :root {
@@ -20,7 +19,6 @@
   --danger-bg: #fee2e2;
   --sat: #3b82f6;
   --sun: #ef4444;
-  --today-bg: #eef2ff;
   --radius-sm: 6px;
   --radius: 12px;
   --radius-lg: 16px;
@@ -46,6 +44,7 @@ header {
   top: 0;
   z-index: 10;
   box-shadow: var(--shadow);
+  padding-top: env(safe-area-inset-top);
 }
 
 .header-top {
@@ -80,7 +79,7 @@ h1 {
   padding: 0.25rem 0.625rem;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   line-height: 1;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
@@ -97,16 +96,16 @@ h1 {
 }
 
 #today-btn {
-  font-size: 0.8125rem !important;
+  font-size: 0.875rem !important;
   font-weight: 600;
   padding: 0.25rem 0.75rem !important;
 }
 
 #week-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  min-width: 150px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 170px;
   text-align: center;
   user-select: none;
 }
@@ -116,120 +115,91 @@ h1 {
 main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
-/* ── Tracker card ── */
+/* ── Habits list ── */
 
-.tracker-card {
+#habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Habit card ── */
+
+.habit-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
+  padding: 1rem 1.25rem 0.875rem;
+  border-left: 4px solid var(--hc, var(--primary));
+  transition: box-shadow 0.15s;
 }
 
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+/* ── Card header ── */
 
-/* ── Table ── */
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-thead th {
-  background: var(--bg);
-  padding: 0.75rem 0.5rem;
-  text-align: center;
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  user-select: none;
-}
-
-th.habit-col {
-  text-align: left;
-  padding-left: 1.25rem;
-  min-width: 160px;
-  max-width: 220px;
-}
-
-th.day-col {
-  min-width: 60px;
-}
-
-th.day-col.today {
-  background: var(--today-bg);
-}
-
-th.prog-col {
-  min-width: 90px;
-  padding-right: 1rem;
-}
-
-.dn {
-  display: block;
-  font-size: 0.9375rem;
-}
-
-.dd {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-  font-weight: 400;
-}
-
-.sat { color: var(--sat); }
-.sun { color: var(--sun); }
-
-/* ── Body rows ── */
-
-tbody tr {
-  border-bottom: 1px solid var(--border);
-}
-
-tbody tr:last-child {
-  border-bottom: none;
-}
-
-tbody tr:hover {
-  background: #fafafa;
-}
-
-/* habit-cell uses display:flex — valid on <td> in modern browsers */
-td.habit-cell {
+.card-header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.625rem 0.5rem 0.625rem 0.75rem;
-  min-width: 180px;
-  max-width: 240px;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
   position: relative;
+  min-height: 32px;
 }
 
 .habit-name {
   flex: 1;
-  font-weight: 500;
+  font-size: 1.0625rem;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* ── Drag handle ── */
+
+.drag-handle {
+  flex-shrink: 0;
+  width: 22px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--border);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 4px;
+  touch-action: none;
+  transition: color 0.15s;
+}
+
+.drag-handle:hover { color: var(--text-muted); }
+.drag-handle:active { cursor: grabbing; }
+
+/* ── Color dot ── */
+
+.color-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Edit / Delete buttons ── */
+
+.edit-btn,
 .del-btn {
   position: absolute;
-  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -242,32 +212,63 @@ td.habit-cell {
   transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
 
-tbody tr:hover .del-btn,
-tbody tr:hover .edit-btn {
+.del-btn { right: 0; }
+.edit-btn { right: calc(28px + 0.25rem); }
+
+.habit-card:hover .edit-btn,
+.habit-card:hover .del-btn {
   opacity: 1;
   background: var(--surface);
 }
 
-.del-btn:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
+.edit-btn:hover { background: var(--primary-light) !important; color: var(--primary-dark); }
+.del-btn:hover  { background: var(--danger-bg) !important; color: var(--danger); }
+
+/* ── Card days grid ── */
+
+.card-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
 }
 
-/* ── Check cells ── */
-
-td.check-cell {
-  text-align: center;
-  padding: 0.5rem 0.25rem;
-  vertical-align: middle;
+.card-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
-td.check-cell.today {
-  background: var(--today-bg);
+.day-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1;
 }
+
+.day-name.sat { color: var(--sat); }
+.day-name.sun { color: var(--sun); }
+
+.day-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.card-day.today .day-name,
+.card-day.today .day-date {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+/* ── Check buttons ── */
 
 .check-btn {
-  width: 36px;
-  height: 36px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 52px;
+  min-width: 32px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: none;
@@ -277,12 +278,14 @@ td.check-cell.today {
   justify-content: center;
   color: transparent;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .check-btn:hover {
   border-color: var(--hc, var(--primary));
   background: var(--hc-light, var(--primary-light));
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .check-btn.done {
@@ -291,23 +294,26 @@ td.check-cell.today {
   color: #fff;
 }
 
-.check-btn.done:hover {
-  filter: brightness(0.85);
+.check-btn.done:hover { filter: brightness(0.9); }
+
+.card-day.today .check-btn {
+  border-color: var(--hc, var(--primary));
+  border-width: 2.5px;
 }
 
-/* ── Progress cells ── */
+/* ── Card progress ── */
 
-td.prog-cell {
-  padding: 0.5rem 1rem 0.5rem 0.5rem;
-  text-align: center;
-  vertical-align: middle;
-  white-space: nowrap;
+.card-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
 }
 
 .prog-count {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--primary-dark);
+  color: var(--hc, var(--primary-dark));
+  flex-shrink: 0;
 }
 
 .prog-total {
@@ -316,11 +322,10 @@ td.prog-cell {
 }
 
 .prog-bar {
-  width: 64px;
-  height: 5px;
+  flex: 1;
+  height: 6px;
   background: var(--border);
   border-radius: 9999px;
-  margin: 5px auto 0;
   overflow: hidden;
 }
 
@@ -330,6 +335,15 @@ td.prog-cell {
   border-radius: 9999px;
   transition: width 0.3s ease;
 }
+
+/* ── Drag state ── */
+
+.habit-card.is-dragging {
+  opacity: 0.45;
+  background: var(--primary-light) !important;
+}
+
+.habit-card.is-dragging .drag-handle { cursor: grabbing; }
 
 /* ── Empty state ── */
 
@@ -341,11 +355,12 @@ td.prog-cell {
   padding: 3.5rem 2rem;
   color: var(--text-muted);
   text-align: center;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
-.empty-state svg {
-  color: var(--border);
-}
+.empty-state svg { color: var(--border); }
 
 .empty-state p {
   font-size: 0.9375rem;
@@ -353,9 +368,7 @@ td.prog-cell {
   color: var(--text);
 }
 
-.empty-state small {
-  font-size: 0.8125rem;
-}
+.empty-state small { font-size: 0.8125rem; }
 
 /* ── Add form ── */
 
@@ -376,7 +389,7 @@ td.prog-cell {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.5625rem 0.875rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-family: inherit;
   color: var(--text);
   background: var(--bg);
@@ -384,9 +397,7 @@ td.prog-cell {
   transition: border-color 0.15s, background 0.15s;
 }
 
-#habit-input::placeholder {
-  color: var(--text-muted);
-}
+#habit-input::placeholder { color: var(--text-muted); }
 
 #habit-input:focus {
   border-color: var(--primary);
@@ -400,7 +411,7 @@ td.prog-cell {
   border: none;
   border-radius: var(--radius-sm);
   padding: 0.5625rem 1.25rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-family: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -408,19 +419,15 @@ td.prog-cell {
   transition: background 0.15s, transform 0.1s;
 }
 
-#add-form button[type="submit"]:hover {
-  background: var(--primary-dark);
-}
-
-#add-form button[type="submit"]:active {
-  transform: scale(0.97);
-}
+#add-form button[type="submit"]:hover  { background: var(--primary-dark); }
+#add-form button[type="submit"]:active { transform: scale(0.97); }
 
 /* ── Responsive ── */
 
 @media (max-width: 600px) {
   main {
-    padding: 1rem;
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
   }
 
   .header-top {
@@ -428,28 +435,20 @@ td.prog-cell {
     padding: 0 1rem;
   }
 
-  h1 {
-    font-size: 1rem;
-  }
+  h1 { font-size: 1rem; }
 
   #week-label {
-    min-width: 110px;
-    font-size: 0.8125rem;
+    min-width: 130px;
+    font-size: 0.9375rem;
   }
 
-  th.habit-col,
-  td.habit-cell {
-    min-width: 120px;
-    max-width: 140px;
+  .habit-card {
+    padding: 0.875rem 1rem 0.75rem;
   }
 
-  .add-form-wrap {
-    padding: 0.875rem 1rem;
-  }
+  .add-form-wrap { padding: 0.875rem 1rem; }
 
-  .toolbar {
-    gap: 0.5rem;
-  }
+  .toolbar { gap: 0.5rem; }
 }
 
 /* ── Header tabs ── */
@@ -486,9 +485,7 @@ td.prog-cell {
   font-weight: 600;
 }
 
-.htab:hover:not(.is-active) {
-  color: var(--text);
-}
+.htab:hover:not(.is-active) { color: var(--text); }
 
 /* ── Stats view ── */
 
@@ -548,7 +545,7 @@ td.prog-cell {
 
 .stat-habit-name {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -575,20 +572,10 @@ td.prog-cell {
   color: var(--text-muted);
 }
 
-.chip strong {
-  color: var(--text);
-  font-weight: 700;
-}
+.chip strong { color: var(--text); font-weight: 700; }
 
-.chip-streak {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  color: #92400e;
-}
-
-.chip-streak strong {
-  color: #b45309;
-}
+.chip-streak { background: #fff7ed; border-color: #fed7aa; color: #92400e; }
+.chip-streak strong { color: #b45309; }
 
 /* ── Week bar chart ── */
 
@@ -625,13 +612,8 @@ td.prog-cell {
   transition: height 0.45s ease;
 }
 
-.chart-col.this-week .chart-track {
-  border-color: var(--primary);
-}
-
-.chart-col.this-week .chart-fill {
-  opacity: 1;
-}
+.chart-col.this-week .chart-track { border-color: var(--primary); }
+.chart-col.this-week .chart-fill  { opacity: 1; }
 
 .chart-label {
   font-size: 0.625rem;
@@ -645,29 +627,7 @@ td.prog-cell {
   font-weight: 700;
 }
 
-/* ── Safe area (viewport-fit=cover, iPhone notch / Dynamic Island) ── */
-
-header {
-  padding-top: env(safe-area-inset-top);
-}
-
-/* calc() with env() is silently ignored by browsers that don't support env(),
-   so the base padding: 1.5rem / 1rem fallback from above still applies. */
-main {
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
-}
-
-@media (max-width: 600px) {
-  main {
-    padding-left: calc(1rem + env(safe-area-inset-left));
-    padding-right: calc(1rem + env(safe-area-inset-right));
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-  }
-}
-
-/* ── Toolbar (export / import) ── */
+/* ── Toolbar ── */
 
 .toolbar {
   display: flex;
@@ -701,13 +661,24 @@ main {
   background: var(--primary-light);
 }
 
-.tool-btn:active {
-  transform: scale(0.97);
+.tool-btn:active { transform: scale(0.97); }
+
+#import-input { display: none; }
+
+/* ── Safe area (iPhone notch / Dynamic Island) ── */
+
+main {
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
 }
 
-/* hide the actual file input inside the label */
-#import-input {
-  display: none;
+@media (max-width: 600px) {
+  main {
+    padding-left: calc(1rem + env(safe-area-inset-left));
+    padding-right: calc(1rem + env(safe-area-inset-right));
+    padding-bottom: calc(0.875rem + env(safe-area-inset-bottom));
+  }
 }
 
 /* ── iOS install banner ── */
@@ -752,9 +723,7 @@ main {
   transition: background 0.15s;
 }
 
-.ios-banner-close:hover {
-  background: rgba(0, 0, 0, 0.12);
-}
+.ios-banner-close:hover { background: rgba(0, 0, 0, 0.12); }
 
 .ios-banner-body {
   display: flex;
@@ -772,9 +741,7 @@ main {
   height: 44px;
 }
 
-.ios-banner-text {
-  flex: 1;
-}
+.ios-banner-text { flex: 1; }
 
 .ios-banner-text strong {
   display: block;
@@ -798,71 +765,7 @@ main {
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
-  color: #007aff; /* iOS blue */
-}
-
-/* ── Drag handle ── */
-
-.drag-handle {
-  flex-shrink: 0;
-  width: 22px;
-  height: 28px;
-  border: none;
-  background: none;
-  color: var(--border);
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border-radius: 4px;
-  touch-action: none; /* prevent scroll-interference on iOS */
-  transition: color 0.15s;
-}
-
-.drag-handle:hover { color: var(--text-muted); }
-.drag-handle:active { cursor: grabbing; }
-
-tr.is-dragging {
-  opacity: 0.45;
-  background: var(--primary-light) !important;
-}
-
-tr.is-dragging .drag-handle { cursor: grabbing; }
-
-/* ── Color dot ── */
-
-.color-dot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-/* ── Edit button ── */
-
-.edit-btn {
-  position: absolute;
-  right: calc(0.5rem + 26px + 0.25rem);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
-}
-
-.edit-btn:hover {
-  background: var(--primary-light);
-  color: var(--primary-dark);
+  color: #007aff;
 }
 
 /* ── Edit modal ── */
@@ -1032,10 +935,7 @@ tr.is-dragging .drag-handle { cursor: grabbing; }
   color: var(--primary-dark);
 }
 
-.step-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
+.step-btn:disabled { opacity: 0.35; cursor: default; }
 
 .goal-val {
   min-width: 64px;

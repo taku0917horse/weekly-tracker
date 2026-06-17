@@ -111,125 +111,127 @@ function toggleDay(habitId, dateStr) {
 
 // ── Rendering ──────────────────────────────────────────────────────────────
 
+function checkmarkSVG() {
+  return `<svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">` +
+    `<path d="M2.5 8L6.5 12L13.5 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `</svg>`;
+}
+
 function render() {
   const dates = getWeekDates(weekOffset);
   const todayStr = toDateStr(new Date());
 
+  // 週ラベル: "6/16(月)〜6/22(日)"
   const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
+  const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
   document.getElementById('week-label').textContent =
-    `${dates[0].getFullYear()}年 ${fmt(dates[0])} – ${fmt(dates[6])}`;
+    `${fmt(dates[0])}(${dayNames[dates[0].getDay()]})〜${fmt(dates[6])}(${dayNames[dates[6].getDay()]})`;
   document.getElementById('today-btn').disabled = weekOffset === 0;
 
-  // Rebuild thead day columns
-  const theadRow = document.getElementById('thead-row');
-  while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
-
-  dates.forEach((d, i) => {
-    const th = document.createElement('th');
-    th.className = 'day-col' + (toDateStr(d) === todayStr ? ' today' : '');
-    const isSat = i === 5, isSun = i === 6;
-    th.innerHTML =
-      `<span class="dn${isSat ? ' sat' : isSun ? ' sun' : ''}">${DAYS_JA[i]}</span>` +
-      `<span class="dd">${d.getMonth() + 1}/${d.getDate()}</span>`;
-    theadRow.appendChild(th);
-  });
-
-  const progTh = document.createElement('th');
-  progTh.className = 'prog-col';
-  progTh.textContent = '達成';
-  theadRow.appendChild(progTh);
-
-  // Body
-  const tbody = document.getElementById('tracker-body');
-  tbody.innerHTML = '';
-
-  const table = document.getElementById('tracker-table');
+  const list = document.getElementById('habits-list');
   const emptyState = document.getElementById('empty-state');
 
+  list.innerHTML = '';
+
   if (state.habits.length === 0) {
-    table.hidden = true;
     emptyState.hidden = false;
     return;
   }
 
-  table.hidden = false;
   emptyState.hidden = true;
 
   for (const habit of state.habits) {
-    const { main: hcMain, light: hcLight } = habitColor(habit);
-    const goal = habitGoal(habit);
-
-    const tr = document.createElement('tr');
-    tr.dataset.habit = habit.id;
-    tr.style.setProperty('--hc', hcMain);
-    tr.style.setProperty('--hc-light', hcLight);
-
-    // Habit cell: drag handle + color dot + name + edit btn + delete btn
-    const habitTd = document.createElement('td');
-    habitTd.className = 'habit-cell';
-    habitTd.innerHTML =
-      `<button class="drag-handle" aria-label="ドラッグして並び替え">` +
-        `<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">` +
-          `<circle cx="3" cy="2.5" r="1.5"/><circle cx="7" cy="2.5" r="1.5"/>` +
-          `<circle cx="3" cy="8"   r="1.5"/><circle cx="7" cy="8"   r="1.5"/>` +
-          `<circle cx="3" cy="13.5" r="1.5"/><circle cx="7" cy="13.5" r="1.5"/>` +
-        `</svg>` +
-      `</button>` +
-      `<span class="color-dot" style="background:${hcMain}"></span>` +
-      `<span class="habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>` +
-      `<button class="edit-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を編集">` +
-        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-          `<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>` +
-          `<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>` +
-        `</svg>` +
-      `</button>` +
-      `<button class="del-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を削除">` +
-        `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">` +
-          `<path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>` +
-        `</svg>` +
-      `</button>`;
-    tr.appendChild(habitTd);
-
-    let done = 0;
-
-    for (const [i, d] of dates.entries()) {
-      const ds = toDateStr(d);
-      const checked = !!state.completions[`${habit.id}_${ds}`];
-      if (checked) done++;
-
-      const td = document.createElement('td');
-      td.className = 'check-cell' + (ds === todayStr ? ' today' : '');
-
-      const btn = document.createElement('button');
-      btn.className = 'check-btn' + (checked ? ' done' : '');
-      btn.dataset.habit = habit.id;
-      btn.dataset.date = ds;
-      btn.setAttribute('aria-label', `${habit.name} ${DAYS_JA[i]}`);
-      btn.setAttribute('aria-pressed', String(checked));
-      if (checked) btn.innerHTML = checkmarkSVG();
-
-      td.appendChild(btn);
-      tr.appendChild(td);
-    }
-
-    // Progress
-    const pct = Math.min(Math.round((done / goal) * 100), 100);
-    const progTd = document.createElement('td');
-    progTd.className = 'prog-cell';
-    progTd.dataset.habit = habit.id;
-    progTd.innerHTML =
-      `<span class="prog-count">${done}<span class="prog-total">/${goal}</span></span>` +
-      `<div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>`;
-    tr.appendChild(progTd);
-
-    tbody.appendChild(tr);
+    list.appendChild(createHabitCard(habit, dates, todayStr));
   }
 }
 
-function checkmarkSVG() {
-  return `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">` +
-    `<path d="M2.5 8L6.5 12L13.5 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
-    `</svg>`;
+function createHabitCard(habit, dates, todayStr) {
+  const { main: hcMain, light: hcLight } = habitColor(habit);
+  const goal = habitGoal(habit);
+
+  const card = document.createElement('div');
+  card.className = 'habit-card';
+  card.dataset.habit = habit.id;
+  card.style.setProperty('--hc', hcMain);
+  card.style.setProperty('--hc-light', hcLight);
+
+  // ── ヘッダー ──
+  const header = document.createElement('div');
+  header.className = 'card-header';
+  header.innerHTML =
+    `<button class="drag-handle" aria-label="ドラッグして並び替え">` +
+      `<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">` +
+        `<circle cx="3" cy="2.5" r="1.5"/><circle cx="7" cy="2.5" r="1.5"/>` +
+        `<circle cx="3" cy="8"   r="1.5"/><circle cx="7" cy="8"   r="1.5"/>` +
+        `<circle cx="3" cy="13.5" r="1.5"/><circle cx="7" cy="13.5" r="1.5"/>` +
+      `</svg>` +
+    `</button>` +
+    `<span class="color-dot" style="background:${hcMain}"></span>` +
+    `<span class="habit-name" title="${esc(habit.name)}">${esc(habit.name)}</span>` +
+    `<button class="edit-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を編集">` +
+      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+        `<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>` +
+        `<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>` +
+      `</svg>` +
+    `</button>` +
+    `<button class="del-btn" data-id="${habit.id}" aria-label="${esc(habit.name)}を削除">` +
+      `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">` +
+        `<path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>` +
+      `</svg>` +
+    `</button>`;
+
+  // ── 曜日グリッド ──
+  const daysDiv = document.createElement('div');
+  daysDiv.className = 'card-days';
+
+  let done = 0;
+  for (const [i, d] of dates.entries()) {
+    const ds = toDateStr(d);
+    const checked = !!state.completions[`${habit.id}_${ds}`];
+    if (checked) done++;
+
+    const isSat = i === 5, isSun = i === 6;
+    const isToday = ds === todayStr;
+
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'card-day' + (isToday ? ' today' : '');
+
+    const dayName = document.createElement('span');
+    dayName.className = 'day-name' + (isSat ? ' sat' : isSun ? ' sun' : '');
+    dayName.textContent = DAYS_JA[i];
+
+    const btn = document.createElement('button');
+    btn.className = 'check-btn' + (checked ? ' done' : '');
+    btn.dataset.habit = habit.id;
+    btn.dataset.date = ds;
+    btn.setAttribute('aria-label', `${habit.name} ${DAYS_JA[i]}`);
+    btn.setAttribute('aria-pressed', String(checked));
+    if (checked) btn.innerHTML = checkmarkSVG();
+
+    const dayDate = document.createElement('span');
+    dayDate.className = 'day-date';
+    dayDate.textContent = `${d.getMonth() + 1}/${d.getDate()}`;
+
+    dayDiv.appendChild(dayName);
+    dayDiv.appendChild(btn);
+    dayDiv.appendChild(dayDate);
+    daysDiv.appendChild(dayDiv);
+  }
+
+  // ── 進捗 ──
+  const pct = Math.min(Math.round((done / goal) * 100), 100);
+  const progressDiv = document.createElement('div');
+  progressDiv.className = 'card-progress';
+  progressDiv.dataset.habit = habit.id;
+  progressDiv.innerHTML =
+    `<span class="prog-count">${done}<span class="prog-total">/${goal}</span></span>` +
+    `<div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>`;
+
+  card.appendChild(header);
+  card.appendChild(daysDiv);
+  card.appendChild(progressDiv);
+
+  return card;
 }
 
 function updateProgress(habitId) {
@@ -241,14 +243,14 @@ function updateProgress(habitId) {
   const habit = state.habits.find(h => h.id === habitId);
   const goal = habitGoal(habit);
   const pct = Math.min(Math.round((done / goal) * 100), 100);
-  const cell = document.querySelector(`.prog-cell[data-habit="${habitId}"]`);
-  if (!cell) return;
-  cell.querySelector('.prog-count').firstChild.textContent = done;
-  cell.querySelector('.prog-total').textContent = `/${goal}`;
-  cell.querySelector('.prog-fill').style.width = `${pct}%`;
+  const progressDiv = document.querySelector(`.card-progress[data-habit="${habitId}"]`);
+  if (!progressDiv) return;
+  progressDiv.querySelector('.prog-count').firstChild.textContent = done;
+  progressDiv.querySelector('.prog-total').textContent = `/${goal}`;
+  progressDiv.querySelector('.prog-fill').style.width = `${pct}%`;
 }
 
-// ── Event listeners (tracker) ──────────────────────────────────────────────
+// ── イベント (トラッカー) ──────────────────────────────────────────────────
 
 document.getElementById('add-form').addEventListener('submit', e => {
   e.preventDefault();
@@ -261,7 +263,7 @@ document.getElementById('add-form').addEventListener('submit', e => {
   render();
 });
 
-document.getElementById('tracker-body').addEventListener('click', e => {
+document.getElementById('habits-list').addEventListener('click', e => {
   const checkBtn = e.target.closest('.check-btn');
   if (checkBtn) {
     const { habit, date } = checkBtn.dataset;
@@ -293,35 +295,54 @@ document.getElementById('prev-week').addEventListener('click', () => { weekOffse
 document.getElementById('next-week').addEventListener('click', () => { weekOffset++; render(); });
 document.getElementById('today-btn').addEventListener('click', () => { weekOffset = 0; render(); });
 
-// ── Drag-and-drop (PointerEvents — works on both desktop and iOS) ──────────
+// ── スワイプジェスチャー ────────────────────────────────────────────────────
+
+let swipeStartX = 0;
+let swipeStartY = 0;
+
+document.getElementById('tracker-view').addEventListener('touchstart', e => {
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('tracker-view').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (dx < 0) { weekOffset++; render(); }
+    else { weekOffset--; render(); }
+  }
+}, { passive: true });
+
+// ── ドラッグ＆ドロップ (PointerEvents) ────────────────────────────────────
 
 let drag = null;
 
-document.getElementById('tracker-body').addEventListener('pointerdown', e => {
+document.getElementById('habits-list').addEventListener('pointerdown', e => {
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
-  const tr = handle.closest('tr');
-  if (!tr) return;
+  const card = handle.closest('.habit-card');
+  if (!card) return;
   e.preventDefault();
   handle.setPointerCapture(e.pointerId);
-  tr.classList.add('is-dragging');
-  drag = { tr };
+  card.classList.add('is-dragging');
+  drag = { el: card };
 });
 
 document.addEventListener('pointermove', e => {
   if (!drag) return;
-  const tbody = document.getElementById('tracker-body');
-  const others = [...tbody.querySelectorAll('tr:not(.is-dragging)')];
-  const after = others.find(r => e.clientY < r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2);
-  if (after) tbody.insertBefore(drag.tr, after);
-  else tbody.appendChild(drag.tr);
+  const list = document.getElementById('habits-list');
+  const others = [...list.querySelectorAll('.habit-card:not(.is-dragging)')];
+  const after = others.find(c => e.clientY < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
+  if (after) list.insertBefore(drag.el, after);
+  else list.appendChild(drag.el);
 });
 
 function endDrag() {
   if (!drag) return;
-  drag.tr.classList.remove('is-dragging');
-  const tbody = document.getElementById('tracker-body');
-  const newOrder = [...tbody.querySelectorAll('tr')].map(r => r.dataset.habit);
+  drag.el.classList.remove('is-dragging');
+  const list = document.getElementById('habits-list');
+  const newOrder = [...list.querySelectorAll('.habit-card')].map(c => c.dataset.habit);
   state.habits = newOrder.map(id => state.habits.find(h => h.id === id)).filter(Boolean);
   save();
   drag = null;
@@ -330,7 +351,7 @@ function endDrag() {
 document.addEventListener('pointerup', endDrag);
 document.addEventListener('pointercancel', endDrag);
 
-// ── Edit modal ─────────────────────────────────────────────────────────────
+// ── 編集モーダル ────────────────────────────────────────────────────────────
 
 let editState = { habitId: null, goal: 7, color: DEFAULT_COLOR };
 
@@ -375,7 +396,7 @@ function renderColorSwatches() {
     btn.type = 'button';
     btn.className = 'color-swatch' + (id === editState.color ? ' selected' : '');
     btn.style.background = main;
-    btn.style.color = main; // used for outline currentColor when selected
+    btn.style.color = main;
     btn.dataset.color = id;
     btn.setAttribute('aria-label', id);
     btn.setAttribute('aria-pressed', String(id === editState.color));
@@ -419,7 +440,7 @@ document.getElementById('edit-name').addEventListener('keydown', e => {
   if (e.key === 'Escape') closeEditModal();
 });
 
-// ── View switching ────────────────────────────────────────────────────────
+// ── ビュー切り替え ────────────────────────────────────────────────────────
 
 let currentView = 'tracker';
 
@@ -439,7 +460,7 @@ function switchView(view) {
 document.getElementById('tab-tracker').addEventListener('click', () => switchView('tracker'));
 document.getElementById('tab-stats').addEventListener('click', () => switchView('stats'));
 
-// ── Stats rendering ───────────────────────────────────────────────────────
+// ── 統計レンダリング ──────────────────────────────────────────────────────
 
 function getStreak(habitId) {
   const today = new Date();
@@ -555,7 +576,7 @@ function createStatCard(habit, numWeeks) {
   return card;
 }
 
-// ── Export / Import ────────────────────────────────────────────────────────
+// ── エクスポート / インポート ───────────────────────────────────────────────
 
 document.getElementById('export-btn').addEventListener('click', () => {
   const payload = JSON.stringify(
@@ -592,7 +613,7 @@ document.getElementById('import-input').addEventListener('change', e => {
   reader.readAsText(file);
 });
 
-// ── iOS install banner ─────────────────────────────────────────────────────
+// ── iOS インストールバナー ──────────────────────────────────────────────────
 
 function initIOSBanner() {
   const ua = navigator.userAgent;
@@ -617,7 +638,7 @@ function initServiceWorker() {
   }
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// ── 初期化 ────────────────────────────────────────────────────────────────
 
 load();
 render();
