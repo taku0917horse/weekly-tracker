@@ -212,6 +212,7 @@ td.habit-cell {
   padding: 0.625rem 0.5rem 0.625rem 0.75rem;
   min-width: 180px;
   max-width: 240px;
+  position: relative;
 }
 
 .habit-name {
@@ -223,7 +224,10 @@ td.habit-cell {
 }
 
 .del-btn {
-  flex-shrink: 0;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   border: none;
@@ -241,6 +245,7 @@ td.habit-cell {
 tbody tr:hover .del-btn,
 tbody tr:hover .edit-btn {
   opacity: 1;
+  background: var(--surface);
 }
 
 .del-btn:hover {
@@ -837,7 +842,10 @@ tr.is-dragging .drag-handle { cursor: grabbing; }
 /* ── Edit button ── */
 
 .edit-btn {
-  flex-shrink: 0;
+  position: absolute;
+  right: calc(0.5rem + 26px + 0.25rem);
+  top: 50%;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   border: none;
