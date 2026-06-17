@@ -381,6 +381,12 @@ main {
 
 #add-form {
   display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.add-row {
+  display: flex;
   gap: 0.625rem;
 }
 
@@ -994,3 +1000,131 @@ main {
 }
 
 .btn-save:hover { background: var(--primary-dark); }
+
+/* ── Day selector (add form & edit modal) ── */
+
+.add-days,
+.edit-days {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.day-sel-btn {
+  flex: 1;
+  min-width: 36px;
+  padding: 0.375rem 0.25rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.day-sel-btn.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.day-sel-btn.sat.is-active { background: var(--sat); border-color: var(--sat); }
+.day-sel-btn.sun.is-active { background: var(--sun); border-color: var(--sun); }
+
+.day-sel-btn:not(.is-active).sat { color: var(--sat); border-color: #bfdbfe; }
+.day-sel-btn:not(.is-active).sun { color: var(--sun); border-color: #fecaca; }
+
+.day-sel-btn:hover:not(.is-active) {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+/* ── Not-scheduled days in tracker ── */
+
+.card-day.not-scheduled {
+  opacity: 0.4;
+}
+
+.card-day.not-scheduled .check-btn {
+  border-style: dashed;
+}
+
+/* ── Today view ── */
+
+#today-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.today-date-header {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 0.25rem 0.125rem;
+}
+
+.today-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.today-habit-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--hc, var(--primary));
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background 0.2s;
+}
+
+.today-habit-card.done {
+  background: var(--hc-light, var(--primary-light));
+}
+
+.today-habit-card .habit-name {
+  flex: 1;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-habit-card.done .habit-name {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--hc, var(--primary));
+}
+
+.today-check {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  max-width: none;
+  min-width: 0;
+}
+
+.today-summary {
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.25rem 0;
+}
+
+@media (max-width: 600px) {
+  .today-habit-card { padding: 0.875rem 1rem; }
+  .today-check { width: 44px; height: 44px; }
+}

@@ -17,7 +17,7 @@
   <header>
     <div class="header-top">
       <h1>Weekly Tracker</h1>
-      <nav class="week-nav" id="week-nav" aria-label="週の移動">
+      <nav class="week-nav" id="week-nav" aria-label="週の移動" hidden>
         <button id="prev-week" aria-label="前の週">&#8249;</button>
         <span id="week-label"></span>
         <button id="next-week" aria-label="次の週">&#8250;</button>
@@ -25,7 +25,14 @@
       </nav>
     </div>
     <div class="header-tabs" role="tablist">
-      <button class="htab is-active" id="tab-tracker" role="tab" aria-selected="true">
+      <button class="htab is-active" id="tab-today" role="tab" aria-selected="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        今日
+      </button>
+      <button class="htab" id="tab-tracker" role="tab" aria-selected="false">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -46,8 +53,11 @@
   </header>
 
   <main>
+    <!-- ── 今日ビュー ── -->
+    <div id="today-view"></div>
+
     <!-- ── トラッカービュー ── -->
-    <div id="tracker-view">
+    <div id="tracker-view" hidden>
       <div id="empty-state" class="empty-state" hidden>
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -62,14 +72,25 @@
 
       <div class="add-form-wrap">
         <form id="add-form">
-          <input
-            type="text"
-            id="habit-input"
-            placeholder="新しい習慣を入力... (例: 読書、運動、瞑想)"
-            maxlength="50"
-            autocomplete="off"
-          >
-          <button type="submit">追加</button>
+          <div class="add-row">
+            <input
+              type="text"
+              id="habit-input"
+              placeholder="新しい習慣を入力..."
+              maxlength="50"
+              autocomplete="off"
+            >
+            <button type="submit">追加</button>
+          </div>
+          <div class="add-days" id="add-days" role="group" aria-label="実施する曜日">
+            <button type="button" class="day-sel-btn is-active" data-day="0">月</button>
+            <button type="button" class="day-sel-btn is-active" data-day="1">火</button>
+            <button type="button" class="day-sel-btn is-active" data-day="2">水</button>
+            <button type="button" class="day-sel-btn is-active" data-day="3">木</button>
+            <button type="button" class="day-sel-btn is-active" data-day="4">金</button>
+            <button type="button" class="day-sel-btn is-active sat" data-day="5">土</button>
+            <button type="button" class="day-sel-btn is-active sun" data-day="6">日</button>
+          </div>
         </form>
       </div>
 
@@ -117,6 +138,10 @@
         <div class="field">
           <span class="field-label">カラー</span>
           <div class="color-swatches" id="color-swatches" role="group" aria-label="カラー選択"></div>
+        </div>
+        <div class="field">
+          <span class="field-label">実施する曜日</span>
+          <div class="edit-days" id="edit-days" role="group" aria-label="実施する曜日"></div>
         </div>
         <div class="field">
           <span class="field-label">週の目標日数</span>

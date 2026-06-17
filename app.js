@@ -21,7 +21,17 @@ function habitColor(habit) {
 }
 
 function habitGoal(habit) {
-  return habit.weeklyGoal ?? 7;
+  return habit.weeklyGoal ?? (habit.days ? habit.days.length : 7);
+}
+
+// 実施曜日 (0=月…6=日)。未設定なら全曜日
+function habitDays(habit) {
+  return habit.days ?? [0, 1, 2, 3, 4, 5, 6];
+}
+
+// 今日の曜日インデックス (0=月…6=日)
+function todayDayIndex() {
+  return (new Date().getDay() + 6) % 7;
 }
 
 let state = { habits: [], completions: {} };
@@ -89,8 +99,9 @@ function load() {
 
 // ── State mutations ────────────────────────────────────────────────────────
 
-function addHabit(name) {
-  state.habits.push({ id: uid(), name, color: DEFAULT_COLOR, weeklyGoal: 7 });
+function addHabit(name, days) {
+  const d = days ?? [0, 1, 2, 3, 4, 5, 6];
+  state.habits.push({ id: uid(), name, color: DEFAULT_COLOR, weeklyGoal: d.length, days: d });
   save();
 }
 
@@ -109,13 +120,111 @@ function toggleDay(habitId, dateStr) {
   save();
 }
 
-// ── Rendering ──────────────────────────────────────────────────────────────
+// ── Rendering helpers ──────────────────────────────────────────────────────
 
 function checkmarkSVG() {
   return `<svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">` +
     `<path d="M2.5 8L6.5 12L13.5 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
     `</svg>`;
 }
+
+// ── 今日ビュー ─────────────────────────────────────────────────────────────
+
+function renderToday() {
+  const todayIdx  = todayDayIndex();
+  const todayStr  = toDateStr(new Date());
+  const todayHabits = state.habits.filter(h => habitDays(h).includes(todayIdx));
+
+  const view = document.getElementById('today-view');
+  view.innerHTML = '';
+
+  // 日付ヘッダー
+  const now = new Date();
+  const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  const header = document.createElement('div');
+  header.className = 'today-date-header';
+  header.textContent = `今日: ${now.getMonth() + 1}/${now.getDate()}(${dayNames[now.getDay()]})`;
+  view.appendChild(header);
+
+  if (state.habits.length === 0) {
+    view.appendChild(makeTodayEmpty('習慣を追加してトラッキングを始めましょう'));
+    return;
+  }
+
+  if (todayHabits.length === 0) {
+    view.appendChild(makeTodayEmpty('今日は実施する習慣がありません'));
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.id = 'today-list';
+  list.className = 'today-list';
+  for (const habit of todayHabits) {
+    list.appendChild(createTodayCard(habit, todayStr));
+  }
+  view.appendChild(list);
+
+  const doneCount = todayHabits.filter(h => state.completions[`${h.id}_${todayStr}`]).length;
+  const summary = document.createElement('div');
+  summary.id = 'today-summary';
+  summary.className = 'today-summary';
+  summary.textContent = `${doneCount} / ${todayHabits.length} 完了`;
+  view.appendChild(summary);
+}
+
+function makeTodayEmpty(msg) {
+  const el = document.createElement('div');
+  el.className = 'empty-state';
+  el.innerHTML =
+    `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">` +
+      `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>` +
+    `</svg>` +
+    `<p>${msg}</p>`;
+  return el;
+}
+
+function createTodayCard(habit, todayStr) {
+  const { main: hcMain, light: hcLight } = habitColor(habit);
+  const checked = !!state.completions[`${habit.id}_${todayStr}`];
+
+  const card = document.createElement('div');
+  card.className = 'today-habit-card' + (checked ? ' done' : '');
+  card.dataset.habit = habit.id;
+  card.style.setProperty('--hc', hcMain);
+  card.style.setProperty('--hc-light', hcLight);
+
+  const dot = document.createElement('span');
+  dot.className = 'color-dot';
+  dot.style.background = hcMain;
+
+  const name = document.createElement('span');
+  name.className = 'habit-name';
+  name.textContent = habit.name;
+
+  const btn = document.createElement('button');
+  btn.className = 'check-btn today-check' + (checked ? ' done' : '');
+  btn.dataset.habit = habit.id;
+  btn.dataset.date = todayStr;
+  btn.setAttribute('aria-label', `${habit.name} 今日`);
+  btn.setAttribute('aria-pressed', String(checked));
+  if (checked) btn.innerHTML = checkmarkSVG();
+
+  card.appendChild(dot);
+  card.appendChild(name);
+  card.appendChild(btn);
+  return card;
+}
+
+function updateTodaySummary() {
+  const todayIdx  = todayDayIndex();
+  const todayStr  = toDateStr(new Date());
+  const todayHabits = state.habits.filter(h => habitDays(h).includes(todayIdx));
+  const doneCount = todayHabits.filter(h => state.completions[`${h.id}_${todayStr}`]).length;
+  const el = document.getElementById('today-summary');
+  if (el) el.textContent = `${doneCount} / ${todayHabits.length} 完了`;
+}
+
+// ── トラッカービュー ───────────────────────────────────────────────────────
 
 function render() {
   const dates = getWeekDates(weekOffset);
@@ -148,6 +257,7 @@ function render() {
 function createHabitCard(habit, dates, todayStr) {
   const { main: hcMain, light: hcLight } = habitColor(habit);
   const goal = habitGoal(habit);
+  const days = habitDays(habit);
 
   const card = document.createElement('div');
   card.className = 'habit-card';
@@ -192,9 +302,12 @@ function createHabitCard(habit, dates, todayStr) {
 
     const isSat = i === 5, isSun = i === 6;
     const isToday = ds === todayStr;
+    const isScheduled = days.includes(i);
 
     const dayDiv = document.createElement('div');
-    dayDiv.className = 'card-day' + (isToday ? ' today' : '');
+    dayDiv.className = 'card-day' +
+      (isToday ? ' today' : '') +
+      (isScheduled ? '' : ' not-scheduled');
 
     const dayName = document.createElement('span');
     dayName.className = 'day-name' + (isSat ? ' sat' : isSun ? ' sun' : '');
@@ -230,7 +343,6 @@ function createHabitCard(habit, dates, todayStr) {
   card.appendChild(header);
   card.appendChild(daysDiv);
   card.appendChild(progressDiv);
-
   return card;
 }
 
@@ -241,6 +353,7 @@ function updateProgress(habitId) {
     if (state.completions[`${habitId}_${toDateStr(d)}`]) done++;
   }
   const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
   const goal = habitGoal(habit);
   const pct = Math.min(Math.round((done / goal) * 100), 100);
   const progressDiv = document.querySelector(`.card-progress[data-habit="${habitId}"]`);
@@ -250,17 +363,60 @@ function updateProgress(habitId) {
   progressDiv.querySelector('.prog-fill').style.width = `${pct}%`;
 }
 
-// ── イベント (トラッカー) ──────────────────────────────────────────────────
+// ── イベント: 今日ビュー ───────────────────────────────────────────────────
+
+document.getElementById('today-view').addEventListener('click', e => {
+  const btn = e.target.closest('.check-btn');
+  if (!btn) return;
+  const { habit, date } = btn.dataset;
+  toggleDay(habit, date);
+  const checked = !!state.completions[`${habit}_${date}`];
+  btn.className = 'check-btn today-check' + (checked ? ' done' : '');
+  btn.setAttribute('aria-pressed', String(checked));
+  btn.innerHTML = checked ? checkmarkSVG() : '';
+  btn.closest('.today-habit-card')?.classList.toggle('done', checked);
+  updateTodaySummary();
+  updateProgress(habit); // トラッカーが表示中なら更新
+});
+
+// ── イベント: トラッカービュー ────────────────────────────────────────────
 
 document.getElementById('add-form').addEventListener('submit', e => {
   e.preventDefault();
   const inp = document.getElementById('habit-input');
   const name = inp.value.trim();
   if (!name) return;
-  addHabit(name);
+
+  const selectedDays = [...document.querySelectorAll('#add-days .day-sel-btn.is-active')]
+    .map(b => parseInt(b.dataset.day));
+  addHabit(name, selectedDays.length > 0 ? selectedDays : [0, 1, 2, 3, 4, 5, 6]);
+
   inp.value = '';
   inp.focus();
-  render();
+
+  // 曜日セレクターを全選択にリセット
+  document.querySelectorAll('#add-days .day-sel-btn').forEach(b => {
+    b.classList.add('is-active');
+    b.setAttribute('aria-pressed', 'true');
+  });
+
+  if (currentView === 'tracker') render();
+  if (currentView === 'today') renderToday();
+});
+
+document.getElementById('add-days').addEventListener('click', e => {
+  const btn = e.target.closest('.day-sel-btn');
+  if (!btn) return;
+  const isActive = btn.classList.contains('is-active');
+  if (isActive) {
+    const activeCount = document.querySelectorAll('#add-days .day-sel-btn.is-active').length;
+    if (activeCount <= 1) return;
+    btn.classList.remove('is-active');
+    btn.setAttribute('aria-pressed', 'false');
+  } else {
+    btn.classList.add('is-active');
+    btn.setAttribute('aria-pressed', 'true');
+  }
 });
 
 document.getElementById('habits-list').addEventListener('click', e => {
@@ -277,10 +433,7 @@ document.getElementById('habits-list').addEventListener('click', e => {
   }
 
   const editBtn = e.target.closest('.edit-btn');
-  if (editBtn) {
-    openEditModal(editBtn.dataset.id);
-    return;
-  }
+  if (editBtn) { openEditModal(editBtn.dataset.id); return; }
 
   const delBtn = e.target.closest('.del-btn');
   if (delBtn) {
@@ -314,7 +467,7 @@ document.getElementById('tracker-view').addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-// ── ドラッグ＆ドロップ (PointerEvents) ────────────────────────────────────
+// ── ドラッグ＆ドロップ ─────────────────────────────────────────────────────
 
 let drag = null;
 
@@ -353,16 +506,22 @@ document.addEventListener('pointercancel', endDrag);
 
 // ── 編集モーダル ────────────────────────────────────────────────────────────
 
-let editState = { habitId: null, goal: 7, color: DEFAULT_COLOR };
+let editState = { habitId: null, goal: 7, color: DEFAULT_COLOR, days: [0,1,2,3,4,5,6] };
 
 function openEditModal(habitId) {
   const habit = state.habits.find(h => h.id === habitId);
   if (!habit) return;
-  editState = { habitId, goal: habitGoal(habit), color: habit.color || DEFAULT_COLOR };
+  editState = {
+    habitId,
+    goal: habitGoal(habit),
+    color: habit.color || DEFAULT_COLOR,
+    days: [...habitDays(habit)],
+  };
   document.getElementById('edit-name').value = habit.name;
   document.getElementById('goal-display').textContent = editState.goal;
   updateStepBtns();
   renderColorSwatches();
+  renderEditDays();
   document.getElementById('edit-modal').hidden = false;
   requestAnimationFrame(() => document.getElementById('edit-name').focus());
 }
@@ -381,9 +540,11 @@ function saveEdit() {
     habit.name = name;
     habit.color = editState.color;
     habit.weeklyGoal = editState.goal;
+    habit.days = editState.days;
     save();
-    render();
-    if (currentView === 'stats') renderStats();
+    if (currentView === 'tracker') render();
+    else if (currentView === 'today') renderToday();
+    else if (currentView === 'stats') renderStats();
   }
   closeEditModal();
 }
@@ -410,6 +571,38 @@ function renderColorSwatches() {
     });
     container.appendChild(btn);
   }
+}
+
+function renderEditDays() {
+  const container = document.getElementById('edit-days');
+  container.innerHTML = '';
+  DAYS_JA.forEach((name, i) => {
+    const isSat = i === 5, isSun = i === 6;
+    const active = editState.days.includes(i);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'day-sel-btn' +
+      (active ? ' is-active' : '') +
+      (isSat ? ' sat' : isSun ? ' sun' : '');
+    btn.textContent = name;
+    btn.dataset.day = i;
+    btn.setAttribute('aria-pressed', String(active));
+    btn.addEventListener('click', () => {
+      const idx = editState.days.indexOf(i);
+      if (idx >= 0) {
+        if (editState.days.length <= 1) return;
+        editState.days.splice(idx, 1);
+        btn.classList.remove('is-active');
+        btn.setAttribute('aria-pressed', 'false');
+      } else {
+        editState.days.push(i);
+        editState.days.sort((a, b) => a - b);
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    });
+    container.appendChild(btn);
+  });
 }
 
 function updateStepBtns() {
@@ -442,21 +635,28 @@ document.getElementById('edit-name').addEventListener('keydown', e => {
 
 // ── ビュー切り替え ────────────────────────────────────────────────────────
 
-let currentView = 'tracker';
+let currentView = 'today';
 
 function switchView(view) {
   currentView = view;
-  const isTracker = view === 'tracker';
-  document.getElementById('tracker-view').hidden = !isTracker;
-  document.getElementById('stats-view').hidden = isTracker;
-  document.getElementById('week-nav').hidden = !isTracker;
-  document.getElementById('tab-tracker').classList.toggle('is-active', isTracker);
-  document.getElementById('tab-stats').classList.toggle('is-active', !isTracker);
-  document.getElementById('tab-tracker').setAttribute('aria-selected', String(isTracker));
-  document.getElementById('tab-stats').setAttribute('aria-selected', String(!isTracker));
-  if (!isTracker) renderStats();
+  document.getElementById('today-view').hidden   = view !== 'today';
+  document.getElementById('tracker-view').hidden = view !== 'tracker';
+  document.getElementById('stats-view').hidden   = view !== 'stats';
+  document.getElementById('week-nav').hidden      = view !== 'tracker';
+
+  ['today', 'tracker', 'stats'].forEach(v => {
+    const tab = document.getElementById(`tab-${v}`);
+    if (!tab) return;
+    tab.classList.toggle('is-active', v === view);
+    tab.setAttribute('aria-selected', String(v === view));
+  });
+
+  if (view === 'tracker') render();
+  if (view === 'today')   renderToday();
+  if (view === 'stats')   renderStats();
 }
 
+document.getElementById('tab-today').addEventListener('click', () => switchView('today'));
 document.getElementById('tab-tracker').addEventListener('click', () => switchView('tracker'));
 document.getElementById('tab-stats').addEventListener('click', () => switchView('stats'));
 
@@ -603,7 +803,9 @@ document.getElementById('import-input').addEventListener('change', e => {
       if (confirm(`${data.habits.length} 件の習慣データをインポートしますか？\n（現在のデータは上書きされます）`)) {
         state = { habits: data.habits, completions: data.completions };
         save();
-        render();
+        if (currentView === 'tracker') render();
+        else if (currentView === 'today') renderToday();
+        else if (currentView === 'stats') renderStats();
       }
     } catch {
       alert('インポートに失敗しました。ファイルの形式を確認してください。');
@@ -641,6 +843,6 @@ function initServiceWorker() {
 // ── 初期化 ────────────────────────────────────────────────────────────────
 
 load();
-render();
+renderToday();
 initIOSBanner();
 initServiceWorker();
